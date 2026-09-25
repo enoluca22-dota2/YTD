@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ytd_window_background">#FFFBFE</color>
+    <color name="ytd_brand_primary">#FF4D2E</color>
+    <color name="ytd_adaptive_bg">#1B1030</color>
+</resources>

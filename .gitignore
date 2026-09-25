@@ -1,0 +1,40 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+/app/build
+/app/release
+keystore/
+*.jks
+*.keystore
+
+# Signing credentials
+keystore.properties
+
+# APKs are published as GitHub Release assets, never committed
+*.apk
+*.aab
+/releases/
+
+# Local caches, IDE and machine-specific files
+.kotlin/
+*.log
+*.hprof
+*.tmp
+*.swp
+Thumbs.db
+.vscode/
+
+# Secrets of any kind (never committed)
+*.p12
+*.pem
+*.key
+.env
+.env.*
+secrets.properties

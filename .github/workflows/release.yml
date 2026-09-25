@@ -1,0 +1,168 @@
+# Builds, tests and publishes YTD.
+#
+# Release: set versionName in app/build.gradle.kts (e.g. "1.2.0"), commit, then
+#
+#   git tag v1.2.0
+#   git push origin v1.2.0
+#
+# The GitHub Release "v1.2.0" gets:
+#   YTD-v1.2.0.apk               universal APK (works on every device)
+#   YTD-v1.2.0-arm64-v8a.apk     per-ABI APKs (smaller); the in-app updater picks the right one
+#   YTD-v1.2.0-armeabi-v7a.apk
+#   YTD-v1.2.0-x86_64.apk
+#   SHA256SUMS.txt               checked by the app before installing
+#
+# Build check: Actions → Release → "Run workflow" builds and tests without signing or publishing.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions) — see RELEASING.md:
+#   KEYSTORE_BASE64    base64 of the release keystore (.jks) — the SAME key as installed builds
+#   KEYSTORE_PASSWORD  store password
+#   KEY_ALIAS          key alias
+#   KEY_PASSWORD       key password
+# GitHub access uses the workflow's own automatic token (github.token); no personal token.
+# APKs are only published as release assets, never committed to the repository.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TAG: ${{ github.ref_name }}
+      # Tag push = real release; manual run = build check only (no signing, nothing published).
+      PUBLISH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Version
+        id: version
+        run: |
+          # The single source of truth is versionName in app/build.gradle.kts.
+          VERSION=$(sed -nE 's/^\s*versionName = "([^"]+)".*/\1/p' app/build.gradle.kts | head -1)
+          if [ -z "$VERSION" ]; then echo "::error::versionName not found in app/build.gradle.kts"; exit 1; fi
+          echo "versionName = $VERSION"
+          if [ "$PUBLISH" = "true" ] && [ "$TAG" != "v$VERSION" ]; then
+            echo "::error::Tag $TAG doesn't match versionName \"$VERSION\" in app/build.gradle.kts (expected tag v$VERSION)."
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$VERSION" == *-* ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Decode signing keystore
+        if: env.PUBLISH == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          # An unsigned (or differently signed) APK can't update installed copies: refuse to publish one.
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then echo "::error::Missing repository secret $name (see RELEASING.md)"; exit 1; fi
+          done
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          echo "KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Unit tests
+        run: ./gradlew --no-daemon :app:testDebugUnitTest
+
+      - name: Build release APKs
+        env:
+          KEYSTORE_PASSWORD: ${{ env.PUBLISH == 'true' && secrets.KEYSTORE_PASSWORD || '' }}
+          KEY_ALIAS: ${{ env.PUBLISH == 'true' && secrets.KEY_ALIAS || '' }}
+          KEY_PASSWORD: ${{ env.PUBLISH == 'true' && secrets.KEY_PASSWORD || '' }}
+        run: >
+          ./gradlew --no-daemon :app:assembleRelease
+          -Pytd.github.owner=${{ github.repository_owner }}
+          -Pytd.github.repo=${{ github.event.repository.name }}
+
+      - name: Collect assets and checksums
+        if: env.PUBLISH == 'true'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          OUT=app/build/outputs/apk/release
+          mkdir -p dist
+          cp "$OUT/app-universal-release.apk"   "dist/YTD-v$VERSION.apk"
+          cp "$OUT/app-arm64-v8a-release.apk"   "dist/YTD-v$VERSION-arm64-v8a.apk"
+          cp "$OUT/app-armeabi-v7a-release.apk" "dist/YTD-v$VERSION-armeabi-v7a.apk"
+          cp "$OUT/app-x86_64-release.apk"      "dist/YTD-v$VERSION-x86_64.apk"
+          # Every APK must be signed with the release key; an unsigned APK is never published.
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          for apk in dist/*.apk; do "$APKSIGNER" verify "$apk"; done
+          (cd dist && sha256sum *.apk > SHA256SUMS.txt)
+          cat dist/SHA256SUMS.txt
+
+      - name: Release notes
+        if: env.PUBLISH == 'true'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PREVIOUS=$(git describe --tags --abbrev=0 --match 'v*' "$TAG^" 2>/dev/null || true)
+          {
+            echo "## YTD $TAG"
+            echo
+            if [ -n "$PREVIOUS" ]; then
+              echo "### Changes since $PREVIOUS"
+              git log --no-merges --pretty='- %s' "$PREVIOUS..$TAG"
+            else
+              echo "### Changes"
+              git log --no-merges --pretty='- %s' "$TAG"
+            fi
+            echo
+            echo "### Download"
+            echo "- \`YTD-v$VERSION.apk\` works on every device."
+            echo "- Smaller per-device builds: \`arm64-v8a\` (most phones), \`armeabi-v7a\` (older phones), \`x86_64\` (emulators)."
+            echo
+            echo "Installed copies can update from **Settings → Check for Updates**."
+            echo
+            echo "### SHA-256"
+            echo '```'
+            cat dist/SHA256SUMS.txt
+            echo '```'
+          } > release-notes.md
+
+      - name: Publish GitHub Release
+        if: env.PUBLISH == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          FLAGS=""
+          if [ "${{ steps.version.outputs.prerelease }}" = "true" ]; then FLAGS="--prerelease"; fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --title "$TAG" --notes-file release-notes.md --verify-tag $FLAGS
+          fi
+
+      - name: Remove keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"
