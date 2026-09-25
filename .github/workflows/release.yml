@@ -1,4 +1,4 @@
-# Builds, tests and publishes YTD.
+# Builds, tests and publishes ENAGELYUCA (YouTube & TikTok Downloader).
 #
 # Release: set versionName in app/build.gradle.kts (e.g. "1.2.0"), commit, then
 #
@@ -6,10 +6,10 @@
 #   git push origin v1.2.0
 #
 # The GitHub Release "v1.2.0" gets:
-#   YTD-v1.2.0.apk               universal APK (works on every device)
-#   YTD-v1.2.0-arm64-v8a.apk     per-ABI APKs (smaller); the in-app updater picks the right one
-#   YTD-v1.2.0-armeabi-v7a.apk
-#   YTD-v1.2.0-x86_64.apk
+#   ENAGELYUCA-v1.2.0.apk                universal APK (works on every device)
+#   ENAGELYUCA-v1.2.0-arm64-v8a.apk      per-ABI APKs (smaller); the in-app updater picks the right one
+#   ENAGELYUCA-v1.2.0-armeabi-v7a.apk
+#   ENAGELYUCA-v1.2.0-x86_64.apk
 #   SHA256SUMS.txt               checked by the app before installing
 #
 # Build check: Actions → Release → "Run workflow" builds and tests without signing or publishing.
@@ -116,10 +116,10 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           OUT=app/build/outputs/apk/release
           mkdir -p dist
-          cp "$OUT/app-universal-release.apk"   "dist/YTD-v$VERSION.apk"
-          cp "$OUT/app-arm64-v8a-release.apk"   "dist/YTD-v$VERSION-arm64-v8a.apk"
-          cp "$OUT/app-armeabi-v7a-release.apk" "dist/YTD-v$VERSION-armeabi-v7a.apk"
-          cp "$OUT/app-x86_64-release.apk"      "dist/YTD-v$VERSION-x86_64.apk"
+          cp "$OUT/app-universal-release.apk"   "dist/ENAGELYUCA-v$VERSION.apk"
+          cp "$OUT/app-arm64-v8a-release.apk"   "dist/ENAGELYUCA-v$VERSION-arm64-v8a.apk"
+          cp "$OUT/app-armeabi-v7a-release.apk" "dist/ENAGELYUCA-v$VERSION-armeabi-v7a.apk"
+          cp "$OUT/app-x86_64-release.apk"      "dist/ENAGELYUCA-v$VERSION-x86_64.apk"
           # Every APK must be signed with the release key; an unsigned APK is never published.
           APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
           for apk in dist/*.apk; do "$APKSIGNER" verify "$apk"; done
@@ -132,7 +132,7 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           PREVIOUS=$(git describe --tags --abbrev=0 --match 'v*' "$TAG^" 2>/dev/null || true)
           {
-            echo "## YTD $TAG"
+            echo "## ENAGELYUCA $TAG — YouTube & TikTok Downloader"
             echo
             if [ -n "$PREVIOUS" ]; then
               echo "### Changes since $PREVIOUS"
@@ -143,7 +143,7 @@ jobs:
             fi
             echo
             echo "### Download"
-            echo "- \`YTD-v$VERSION.apk\` works on every device."
+            echo "- \`ENAGELYUCA-v$VERSION.apk\` works on every device."
             echo "- Smaller per-device builds: \`arm64-v8a\` (most phones), \`armeabi-v7a\` (older phones), \`x86_64\` (emulators)."
             echo
             echo "Installed copies can update from **Settings → Check for Updates**."

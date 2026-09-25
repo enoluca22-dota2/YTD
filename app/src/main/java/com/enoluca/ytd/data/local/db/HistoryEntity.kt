@@ -24,6 +24,6 @@ data class HistoryEntity(
     val completedAt: Long,
     /** User-facing reason for FAILED entries. */
     val errorMessage: String? = null,
-    /** Human-readable folder the file was saved to (e.g. "Movies/YTD"). */
+    /** Human-readable folder the file was saved to (e.g. "Movies/ENAGELYUCA"). */
     val location: String? = null,
 )

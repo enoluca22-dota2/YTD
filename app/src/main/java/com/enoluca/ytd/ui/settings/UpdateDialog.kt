@@ -69,7 +69,7 @@ fun UpdateDialog(state: State, manager: UpdateManager) {
                     }
                     is State.ReadyToInstall -> Text(
                         if (state.needsPermission) {
-                            "To install updates, allow YTD to install apps (Android asks once), then tap Install."
+                            "To install updates, allow ENAGELYUCA to install apps (Android asks once), then tap Install."
                         } else {
                             "Downloaded and verified. Android will ask you to confirm the installation."
                         },

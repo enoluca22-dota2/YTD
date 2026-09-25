@@ -279,7 +279,7 @@ class UpdateManager(
     fun canInstall(): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.O || context.packageManager.canRequestPackageInstalls()
 
-    /** Opens "Install unknown apps" for YTD; the user comes back and taps Install. */
+    /** Opens "Install unknown apps" for this app; the user comes back and taps Install. */
     fun openInstallPermissionSettings() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}"))

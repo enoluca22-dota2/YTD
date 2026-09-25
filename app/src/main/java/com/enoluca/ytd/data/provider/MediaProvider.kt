@@ -4,7 +4,7 @@ import com.enoluca.ytd.data.model.AnalysisResult
 import com.enoluca.ytd.data.platform.DetectedPlatform
 
 /**
- * Abstraction over whatever extraction/download backend YTD uses. The UI and repositories only
+ * Abstraction over whatever extraction/download backend the app uses. The UI and repositories only
  * ever depend on this interface, so the underlying implementation (currently yt-dlp via
  * youtubedl-android) can be swapped without touching ViewModels or Compose screens.
  */

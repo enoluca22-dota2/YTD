@@ -96,7 +96,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, contentPadding: PaddingValues) 
                 Column(Modifier.padding(vertical = 10.dp)) {
                     Text("Download folder", style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        settings.customDownloadTreeUri?.let { "Custom folder selected" } ?: "Default (Movies / Music / Download / YTD)",
+                        settings.customDownloadTreeUri?.let { "Custom folder selected" } ?: "Default (Movies / Music / Download / ENAGELYUCA)",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -172,7 +172,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, contentPadding: PaddingValues) 
                     }
                     val ffmpegVersion by produceState("…") { value = viewModel.ffmpegVersion() }
                     Text("FFmpeg: $ffmpegVersion", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
-                    Text("About YTD — v${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodyMedium)
+                    Text("About ENAGELYUCA — v${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodyMedium)
                     AppUpdateRow(viewModel.updateManager)
                 }
             }

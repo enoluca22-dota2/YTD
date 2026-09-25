@@ -1,10 +1,15 @@
-# YTD
+# ENAGELYUCA
 
-**YTD** is an Android app for downloading **YouTube** and **TikTok** videos and audio to your
-phone. It shows the qualities a video really offers, downloads in the background with real
-progress, and keeps itself up to date from this repository's GitHub Releases.
+**YouTube & TikTok Downloader**
 
-YTD supports YouTube and TikTok only. Any other link gets "Unsupported website. YouTube and
+**ENAGELYUCA** is an Android downloader focused on **YouTube** and **TikTok**: it saves videos
+and audio to your phone, shows the qualities a video really offers, downloads in the
+background with real progress, and keeps itself up to date from this repository's GitHub
+Releases.
+
+The name is built from **EN**o, **AG**ron, **EL**io, **Y**ehlen and **LUCA**.
+
+ENAGELYUCA supports YouTube and TikTok only. Any other link gets "Unsupported website. YouTube and
 TikTok are currently supported."
 
 ## Features
@@ -37,11 +42,11 @@ TikTok are currently supported."
 - History of completed, failed and cancelled downloads, with where each file was saved.
 
 ### Android integration
-- **Share** a YouTube or TikTok link from any app to YTD, or choose **Open with YTD**.
+- **Share** a YouTube or TikTok link from any app to ENAGELYUCA, or choose **Open with ENAGELYUCA**.
   Links keep all their parameters (for example a playlist position).
 - Clipboard detection offers a copied link when you open the app.
-- Files are saved with Android's storage APIs to `Movies/YTD` and `Music/YTD`, or a folder you
-  choose.
+- Files are saved with Android's storage APIs to `Movies/ENAGELYUCA` and `Music/ENAGELYUCA`, or a
+  folder you choose. (Downloads made before the rename stay in `Movies/YTD` / `Music/YTD`.)
 
 ### Design
 - Themes: Glass, Premium Glass, Light, Dark and System.
@@ -49,7 +54,7 @@ TikTok are currently supported."
 ## Installation
 
 1. Open the [latest release](https://github.com/enoluca22-dota2/YTD/releases/latest).
-2. Download **`YTD-vX.Y.Z.apk`**. It works on every device. The smaller `…-arm64-v8a.apk` fits
+2. Download **`ENAGELYUCA-vX.Y.Z.apk`**. It works on every device. The smaller `…-arm64-v8a.apk` fits
    most phones.
 3. Open the file on your phone and allow installing apps from that source when Android asks.
 
@@ -58,7 +63,7 @@ Requires Android 8.0 (API 26) or newer.
 ## In-app updates
 
 **Settings → Check for Updates** asks GitHub for the latest release of
-`enoluca22-dota2/YTD`. No login is needed.
+`enoluca22-dota2/YTD` (the repository keeps its original name). No login is needed.
 
 - If a newer version exists, you see the new and current versions, the release notes and the
   size, with **Update Now** and **Later**.
@@ -110,7 +115,7 @@ Releases are built and published by GitHub Actions (`.github/workflows/release.y
 
 3. The workflow runs the tests, builds signed APKs and publishes the GitHub Release `v1.2.0`
    with these assets:
-   - `YTD-v1.2.0.apk` (universal)
+   - `ENAGELYUCA-v1.2.0.apk` (universal)
    - the per-ABI APKs
    - `SHA256SUMS.txt`
    - release notes built from the commits
@@ -138,7 +143,7 @@ The one-time signing setup and details are in [RELEASING.md](RELEASING.md).
 
 ## Support the project
 
-If YTD is useful to you, you can support its development on Buy Me a Coffee. The link will be
+If ENAGELYUCA is useful to you, you can support its development on Buy Me a Coffee. The link will be
 added here soon.
 
 ## Disclaimer

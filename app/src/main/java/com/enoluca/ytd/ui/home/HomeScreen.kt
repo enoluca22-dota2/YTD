@@ -69,6 +69,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.enoluca.ytd.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -269,7 +271,8 @@ private fun Header() {
     val galactic = LocalResolvedTheme.current.style == VisualStyle.GALACTIC
     Column {
         Text(
-            "YTD",
+            stringResource(R.string.app_name),
+            maxLines = 1,
             style = if (galactic) {
                 // Galactic: cyan → violet wordmark.
                 MaterialTheme.typography.headlineLarge.copy(brush = Brush.linearGradient(listOf(GalacticElectricCyan, GalacticCosmicViolet)))
@@ -280,9 +283,9 @@ private fun Header() {
             color = if (galactic) Color.Unspecified else MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Black,
         )
-        Text("YouTube & TikTok downloader", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.app_subtitle), style = MaterialTheme.typography.titleMedium)
         Text(
-            "Paste or share a YouTube or TikTok link — YTD shows the qualities that are really available.",
+            "Paste or share a YouTube or TikTok link — ENAGELYUCA shows the qualities that are really available.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

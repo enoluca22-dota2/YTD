@@ -2,7 +2,7 @@ package com.enoluca.ytd.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// YTD brand palette — a warm coral/orange accent on neutral charcoal surfaces.
+// ENAGELYUCA brand palette (Ytd* names kept for compatibility) — a warm coral/orange accent on neutral charcoal surfaces.
 val YtdOrange = Color(0xFFFF4D2E)
 val YtdOrangeLight = Color(0xFFFFB199)
 val YtdOrangeContainerLight = Color(0xFFFFDBD1)

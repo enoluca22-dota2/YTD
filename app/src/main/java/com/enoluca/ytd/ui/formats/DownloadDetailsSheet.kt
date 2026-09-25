@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.enoluca.ytd.data.provider.StoragePublisher
 import com.enoluca.ytd.core.FileNaming
 import com.enoluca.ytd.core.Formatting
 import com.enoluca.ytd.data.model.DownloadCategory
@@ -148,7 +149,7 @@ fun DownloadDetailsSheet(
 
             val note = when {
                 format.kind == FormatKind.VIDEO && !format.hasAudio ->
-                    "This resolution has no sound on the source, so YTD adds the best available audio track automatically."
+                    "This resolution has no sound on the source, so ENAGELYUCA adds the best available audio track automatically."
                 format.nativeAudio ->
                     "Downloads the source's own ${format.container?.uppercase() ?: "audio"} track exactly as provided — no conversion."
                 format.isBestAvailable ->
@@ -190,7 +191,7 @@ fun DownloadDetailsSheet(
             }
 
             Spacer(Modifier.height(20.dp))
-            val name = fileBaseName.ifBlank { "YTD Download" }
+            val name = fileBaseName.ifBlank { "ENAGELYUCA Download" }
             PrimaryActionButton(
                 text = "Download now",
                 icon = Icons.Filled.Download,
@@ -235,7 +236,7 @@ private fun destinationLabel(category: DownloadCategory, customFolderSelected: B
         DownloadCategory.IMAGE -> Environment.DIRECTORY_PICTURES
         DownloadCategory.SUBTITLE, DownloadCategory.OTHER -> Environment.DIRECTORY_DOWNLOADS
     }
-    return "$root/YTD"
+    return "$root/${StoragePublisher.FOLDER}"
 }
 
 private fun sizeLabel(format: MediaFormat): String = when (val metric = format.fileSizeBytes) {

@@ -1,12 +1,13 @@
-# Releasing YTD
+# Releasing ENAGELYUCA
 
-YTD APKs are published as **GitHub Release assets** — never committed to the repository
+ENAGELYUCA APKs are published as **GitHub Release assets** — never committed to the repository
 (`*.apk` is git-ignored). Installed copies find new versions through
 **Settings → Check for Updates**, which reads the repository's latest published release.
 
 ## One-time setup
 
-1. The repository is **https://github.com/enoluca22-dota2/YTD**. `gradle.properties` points
+1. The repository is **https://github.com/enoluca22-dota2/YTD** (it keeps its original name;
+   the product is ENAGELYUCA). `gradle.properties` points
    the in-app updater at it (`ytd.github.owner=enoluca22-dota2`, `ytd.github.repo=YTD`); the
    release workflow passes the same values for the repository it runs in.
 
@@ -14,6 +15,8 @@ YTD APKs are published as **GitHub Release assets** — never committed to the r
    They must be for the **same keystore** used for the APKs already installed
    (`keystore/ytd-release.jks`): Android refuses to update an app with an APK signed by a
    different key, and the app's own updater checks this before installing.
+   The keystore file keeps its original name (`ytd-release.jks`); renaming the app doesn't change
+   the key.
 
    | Secret              | Value                                                            |
    |---------------------|------------------------------------------------------------------|
@@ -58,10 +61,10 @@ The workflow refuses a tag that doesn't match `versionName`.
 
    | Asset                          | For                                       |
    |--------------------------------|-------------------------------------------|
-   | `YTD-v1.2.0.apk`               | every device (universal)                  |
-   | `YTD-v1.2.0-arm64-v8a.apk`     | most phones                               |
-   | `YTD-v1.2.0-armeabi-v7a.apk`   | older 32-bit phones                       |
-   | `YTD-v1.2.0-x86_64.apk`        | emulators / x86 devices                   |
+   | `ENAGELYUCA-v1.2.0.apk`        | every device (universal)                  |
+   | `ENAGELYUCA-v1.2.0-arm64-v8a.apk` | most phones                               |
+   | `ENAGELYUCA-v1.2.0-armeabi-v7a.apk` | older 32-bit phones                       |
+   | `ENAGELYUCA-v1.2.0-x86_64.apk` | emulators / x86 devices                   |
    | `SHA256SUMS.txt`               | checksums, verified by the in-app updater |
 
 Tags with a suffix (`v1.3.0-beta.1`) are published as **pre-releases**; the app ignores
@@ -78,7 +81,7 @@ release notes on GitHub afterwards — the update dialog shows them as published
   cache with real progress, then verifies it: ZIP/APK format, SHA-256 from `SHA256SUMS.txt`,
   package name, a higher versionCode and the same signing certificate as the installed app.
 * The verified APK is handed to Android's `PackageInstaller`; Android always shows its own
-  confirmation. The first time, Android asks to allow "Install unknown apps" for YTD.
+  confirmation. The first time, Android asks to allow "Install unknown apps" for ENAGELYUCA.
 
 ## Build check without releasing
 

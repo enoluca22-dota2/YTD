@@ -11,7 +11,7 @@ import com.yausername.youtubedl_android.mapper.VideoInfo
 
 /**
  * Pure mapping from yt-dlp's raw `-F`/`--dump-json` output (as decoded by youtubedl-android's
- * Jackson mappers) to YTD's domain model. No values are invented: fields yt-dlp didn't report
+ * Jackson mappers) to the app's domain model. No values are invented: fields yt-dlp didn't report
  * become [Metric.Unknown] rather than a guessed number, per the "never invent information" rule.
  */
 object FormatMapper {

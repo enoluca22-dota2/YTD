@@ -49,9 +49,9 @@ class StoragePublisher(private val context: Context) {
             Log.w(TAG, "No permission to write the destination", e)
             throw ProviderException.StorageAccess(
                 if (customTreeUri != null) {
-                    "YTD can no longer write to the chosen download folder. Choose it again in Settings."
+                    "ENAGELYUCA can no longer write to the chosen download folder. Choose it again in Settings."
                 } else {
-                    "YTD isn't allowed to save files here. Check the app's storage permission."
+                    "ENAGELYUCA isn't allowed to save files here. Check the app's storage permission."
                 },
                 e.message,
                 e,
@@ -66,7 +66,7 @@ class StoragePublisher(private val context: Context) {
         }
     }
 
-    /** Where a file of [category] ends up, as shown in History ("Movies/YTD" or the picked folder's name). */
+    /** Where a file of [category] ends up, as shown in History ("Movies/ENAGELYUCA" or the picked folder's name). */
     fun locationLabel(category: DownloadCategory, customTreeUri: String?): String {
         if (customTreeUri != null) {
             val name = runCatching { DocumentFile.fromTreeUri(context, Uri.parse(customTreeUri))?.name }.getOrNull()
@@ -86,10 +86,10 @@ class StoragePublisher(private val context: Context) {
     }
 
     private fun relativePathFor(category: DownloadCategory): String = when (category) {
-        DownloadCategory.VIDEO -> Environment.DIRECTORY_MOVIES + "/YTD"
-        DownloadCategory.MUSIC -> Environment.DIRECTORY_MUSIC + "/YTD"
-        DownloadCategory.IMAGE -> Environment.DIRECTORY_PICTURES + "/YTD"
-        DownloadCategory.SUBTITLE, DownloadCategory.OTHER -> Environment.DIRECTORY_DOWNLOADS + "/YTD"
+        DownloadCategory.VIDEO -> Environment.DIRECTORY_MOVIES + "/$FOLDER"
+        DownloadCategory.MUSIC -> Environment.DIRECTORY_MUSIC + "/$FOLDER"
+        DownloadCategory.IMAGE -> Environment.DIRECTORY_PICTURES + "/$FOLDER"
+        DownloadCategory.SUBTITLE, DownloadCategory.OTHER -> Environment.DIRECTORY_DOWNLOADS + "/$FOLDER"
     }
 
     private fun collectionFor(category: DownloadCategory): Uri = when (category) {
@@ -187,8 +187,10 @@ class StoragePublisher(private val context: Context) {
         return newDoc.uri.toString()
     }
 
-    private companion object {
-        const val TAG = "StoragePublisher"
-        const val FREE_SPACE_MARGIN_BYTES = 20L * 1024 * 1024
+    companion object {
+        /** Folder (under Movies, Music, …) that new downloads are saved to — the app's name. */
+        const val FOLDER = "ENAGELYUCA"
+        private const val TAG = "StoragePublisher"
+        private const val FREE_SPACE_MARGIN_BYTES = 20L * 1024 * 1024
     }
 }

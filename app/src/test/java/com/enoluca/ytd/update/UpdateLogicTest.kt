@@ -63,6 +63,21 @@ class UpdateLogicTest {
     }
 
     @Test
+    fun `release assets use the ENAGELYUCA name, and pre-rename YTD names still work`() {
+        val branded = """
+            {"name":"ENAGELYUCA-v1.2.0.apk","size":1,"browser_download_url":"https://github.com/o/r/releases/download/v1.2.0/ENAGELYUCA-v1.2.0.apk"},
+            {"name":"ENAGELYUCA-v1.2.0-arm64-v8a.apk","size":1,"browser_download_url":"https://github.com/o/r/releases/download/v1.2.0/ENAGELYUCA-v1.2.0-arm64-v8a.apk"}
+        """
+        val r = (ReleaseParser.parse(release(assets = branded), listOf("arm64-v8a")) as ReleaseParser.Result.Ok).release
+        assertEquals("ENAGELYUCA-v1.2.0-arm64-v8a.apk", r.apk.name)
+        val universal = (ReleaseParser.parse(release(assets = branded), listOf("x86_64")) as ReleaseParser.Result.Ok).release
+        assertEquals("ENAGELYUCA-v1.2.0.apk", universal.apk.name)
+        // Old naming (release() default assets) keeps working.
+        assertTrue(ReleaseParser.parse(release(), listOf("x86_64")) is ReleaseParser.Result.Ok)
+        assertEquals("ENAGELYUCA", UpdateConfig.APP_NAME)
+    }
+
+    @Test
     fun `falls back to the universal APK`() {
         val r = (ReleaseParser.parse(release(), listOf("armeabi-v7a")) as ReleaseParser.Result.Ok).release
         assertEquals("YTD-v1.2.0.apk", r.apk.name)

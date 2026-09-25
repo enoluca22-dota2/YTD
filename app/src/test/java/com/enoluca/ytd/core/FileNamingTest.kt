@@ -44,7 +44,7 @@ class FileNamingTest {
 
     @Test
     fun `falls back to a generic name when nothing usable remains`() {
-        assertEquals("YTD Download", FileNaming.sanitize("???///"))
+        assertEquals("ENAGELYUCA Download", FileNaming.sanitize("???///"))
     }
 
     @Test

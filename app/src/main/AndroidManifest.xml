@@ -41,7 +41,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>
-            <!-- "Open with YTD" for YouTube/TikTok media links (not verified app links: the
+            <!-- "Open with ENAGELYUCA" for YouTube/TikTok media links (not verified app links: the
                  system keeps asking, the official apps stay the default). -->
             <intent-filter android:label="@string/share_target_label">
                 <action android:name="android.intent.action.VIEW" />

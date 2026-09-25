@@ -7,7 +7,7 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import android.util.Log
 
-/** Open / share / delete for files YTD published. None of these can crash the UI. */
+/** Open / share / delete for files the app published. None of these can crash the UI. */
 object FileActions {
 
     private const val TAG = "FileActions"
@@ -39,7 +39,7 @@ object FileActions {
     }
 
     /**
-     * Deletes a file YTD itself created: a MediaStore row it inserted (Android 10+ lets the owner
+     * Deletes a file the app itself created: a MediaStore row it inserted (Android 10+ lets the owner
      * delete without a prompt), a document in the user-picked SAF folder, or a legacy file shared
      * through our FileProvider. Returns false if it's already gone or can't be removed.
      */

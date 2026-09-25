@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">YTD</string>
+    <string name="app_name">ENAGELYUCA</string>
     <string name="app_subtitle">YouTube &amp; TikTok Downloader</string>
     <!-- Name shown in Android's share sheet. -->
-    <string name="share_target_label">YTD Downloader</string>
+    <string name="share_target_label">ENAGELYUCA</string>
 
     <string name="nav_home">Home</string>
     <string name="nav_downloads">Downloads</string>

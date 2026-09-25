@@ -26,7 +26,7 @@ object FileNaming {
             name = name.take(MAX_BASENAME_LENGTH).trim()
         }
         name = truncateToUtf8Bytes(name, MAX_BASENAME_BYTES).trim()
-        return name.ifBlank { "YTD Download" }
+        return name.ifBlank { "ENAGELYUCA Download" }
     }
 
     /** Cuts [text] to at most [maxBytes] UTF-8 bytes without splitting a character (emoji, CJK, …). */
