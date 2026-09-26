@@ -10,6 +10,7 @@
 #   ENAGELYUCA-v1.2.0-arm64-v8a.apk      per-ABI APKs (smaller); the in-app updater picks the right one
 #   ENAGELYUCA-v1.2.0-armeabi-v7a.apk
 #   ENAGELYUCA-v1.2.0-x86_64.apk
+#   YTD-v1.2.0*.apk                      identical copies for pre-rename installs (they only accept YTD-*)
 #   SHA256SUMS.txt               checked by the app before installing
 #
 # Build check: Actions → Release → "Run workflow" builds and tests without signing or publishing.
@@ -120,6 +121,9 @@ jobs:
           cp "$OUT/app-arm64-v8a-release.apk"   "dist/ENAGELYUCA-v$VERSION-arm64-v8a.apk"
           cp "$OUT/app-armeabi-v7a-release.apk" "dist/ENAGELYUCA-v$VERSION-armeabi-v7a.apk"
           cp "$OUT/app-x86_64-release.apk"      "dist/ENAGELYUCA-v$VERSION-x86_64.apk"
+          # Byte-identical copies under the pre-rename "YTD" prefix: installed builds from before
+          # the rename (0.1.0) only recognize YTD-v*.apk assets and would otherwise find no APK.
+          for apk in dist/ENAGELYUCA-v*.apk; do cp "$apk" "dist/YTD-${apk#dist/ENAGELYUCA-}"; done
           # Every APK must be signed with the release key; an unsigned APK is never published.
           APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
           for apk in dist/*.apk; do "$APKSIGNER" verify "$apk"; done

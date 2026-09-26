@@ -65,6 +65,7 @@ The workflow refuses a tag that doesn't match `versionName`.
    | `ENAGELYUCA-v1.2.0-arm64-v8a.apk` | most phones                               |
    | `ENAGELYUCA-v1.2.0-armeabi-v7a.apk` | older 32-bit phones                       |
    | `ENAGELYUCA-v1.2.0-x86_64.apk` | emulators / x86 devices                   |
+   | `YTD-v1.2.0*.apk`              | identical copies of the above for installs from before the rename (0.1.0), whose updater only recognizes `YTD-` asset names |
    | `SHA256SUMS.txt`               | checksums, verified by the in-app updater |
 
 Tags with a suffix (`v1.3.0-beta.1`) are published as **pre-releases**; the app ignores

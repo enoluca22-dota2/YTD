@@ -19,7 +19,7 @@ android {
         // version, e.g. v1.2.0). versionCode is derived from it (1.2.3 → 1002003), so every
         // release is higher than the previous one and installs over it. The release workflow
         // refuses a tag that doesn't match this value.
-        versionName = "0.1.0"
+        versionName = "0.2.0"
         versionCode = versionCodeFor(versionName!!)
 
         // Where the in-app updater looks for releases (see update/UpdateConfig.kt). Set in
