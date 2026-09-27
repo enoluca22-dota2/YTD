@@ -63,6 +63,22 @@ class UpdateLogicTest {
     }
 
     @Test
+    fun `asset choice is deterministic - device ABI first, current brand first, universal last`() {
+        val mixed = """
+            {"name":"YTD-v1.2.0-arm64-v8a.apk","size":1,"browser_download_url":"https://github.com/o/r/releases/download/v1.2.0/YTD-v1.2.0-arm64-v8a.apk"},
+            {"name":"YTD-v1.2.0.apk","size":1,"browser_download_url":"https://github.com/o/r/releases/download/v1.2.0/YTD-v1.2.0.apk"},
+            {"name":"ENAGELYUCA-v1.2.0.apk","size":1,"browser_download_url":"https://github.com/o/r/releases/download/v1.2.0/ENAGELYUCA-v1.2.0.apk"},
+            {"name":"ENAGELYUCA-v1.2.0-arm64-v8a.apk","size":1,"browser_download_url":"https://github.com/o/r/releases/download/v1.2.0/ENAGELYUCA-v1.2.0-arm64-v8a.apk"},
+            {"name":"ENAGELYUCA-v1.1.0-armeabi-v7a.apk","size":1,"browser_download_url":"https://github.com/o/r/releases/download/v1.2.0/ENAGELYUCA-v1.1.0-armeabi-v7a.apk"},
+            {"name":"app-universal-debug.apk","size":1,"browser_download_url":"https://github.com/o/r/releases/download/v1.2.0/app-universal-debug.apk"}
+        """
+        fun pick(vararg abis: String) = (ReleaseParser.parse(release(assets = mixed), abis.toList()) as ReleaseParser.Result.Ok).release.apk.name
+        assertEquals("ENAGELYUCA-v1.2.0-arm64-v8a.apk", pick("arm64-v8a", "armeabi-v7a"))
+        // The stale 1.1.0 armeabi-v7a APK and the debug APK are never candidates.
+        assertEquals("ENAGELYUCA-v1.2.0.apk", pick("armeabi-v7a"))
+    }
+
+    @Test
     fun `release assets use the ENAGELYUCA name, and pre-rename YTD names still work`() {
         val branded = """
             {"name":"ENAGELYUCA-v1.2.0.apk","size":1,"browser_download_url":"https://github.com/o/r/releases/download/v1.2.0/ENAGELYUCA-v1.2.0.apk"},

@@ -67,6 +67,8 @@ class DownloadEngine(
     private val scope: CoroutineScope,
     /** Asks for the foreground service to be running; called whenever a job is about to start. */
     private val requestForeground: () -> Unit,
+    /** Told about each published file (the Library); never able to fail the download. */
+    private val completionListener: DownloadCompletionListener? = null,
 ) {
     companion object {
         private const val TAG = "DownloadEngine"
@@ -521,6 +523,23 @@ class DownloadEngine(
         )
         // Published: the temp copy is no longer needed. Clean up before reporting COMPLETED.
         deleteTempDir(id)
+        // Library first, then COMPLETED: anything that reacts to "completed" (Open, the
+        // notification, the Downloads list) already finds the file in the Library and opens it
+        // in ENAGELYUCA's player instead of falling back to an external app.
+        completionListener?.let { listener ->
+            runCatching {
+                listener.onDownloadCompleted(
+                    CompletedDownload(
+                        entity = labelled,
+                        fileUri = finalUri,
+                        sizeBytes = sizeBytes,
+                        extension = extension,
+                        mimeType = MimeTypes.forExtension(extension),
+                        location = storagePublisher.locationLabel(entity.category, settings.customDownloadTreeUri),
+                    )
+                )
+            }.onFailure { if (it is CancellationException) throw it else Log.w(TAG, "Library couldn't index download $id", it) }
+        }
         val completedAt = System.currentTimeMillis()
         downloadDao.markCompleted(id, DownloadStatus.COMPLETED, completedAt, finalUri, sizeBytes, completedAt)
         recordHistory(labelled, DownloadStatus.COMPLETED, finalUri, sizeBytes, extension, error = null, customTreeUri = settings.customDownloadTreeUri)

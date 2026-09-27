@@ -19,13 +19,16 @@ android {
         // version, e.g. v1.2.0). versionCode is derived from it (1.2.3 → 1002003), so every
         // release is higher than the previous one and installs over it. The release workflow
         // refuses a tag that doesn't match this value.
-        versionName = "0.2.0"
+        versionName = "0.3.0"
         versionCode = versionCodeFor(versionName!!)
 
         // Where the in-app updater looks for releases (see update/UpdateConfig.kt). Set in
         // gradle.properties, or passed by the release workflow for the repository it runs in.
         buildConfigField("String", "GITHUB_OWNER", "\"${providers.gradleProperty("ytd.github.owner").orNull.orEmpty()}\"")
         buildConfigField("String", "GITHUB_REPO", "\"${providers.gradleProperty("ytd.github.repo").orNull.orEmpty()}\"")
+        // The package GitHub release APKs are built as; installs with another package (debug's
+        // ".debug" suffix) can't be updated by them.
+        buildConfigField("String", "RELEASE_APPLICATION_ID", "\"$applicationId\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -151,6 +154,16 @@ dependencies {
     implementation(libs.androidx.documentfile)
 
     implementation(libs.kotlinx.coroutines.android)
+
+    // Built-in audio/video player: ExoPlayer inside a MediaSessionService (background playback,
+    // notification, lock screen and Bluetooth/headset controls); PlayerView renders video.
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.session)
+    implementation(libs.androidx.media3.ui)
+    // Live radio: many public stations (BBC, RAI, RTL…) stream as HLS.
+    implementation(libs.androidx.media3.exoplayer.hls)
+    // Media3's session callbacks return ListenableFuture; this bridges them to coroutines.
+    implementation(libs.kotlinx.coroutines.guava)
 
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)

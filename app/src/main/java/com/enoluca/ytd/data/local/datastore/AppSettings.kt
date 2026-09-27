@@ -34,6 +34,13 @@ data class AppSettings(
     /** Offer to analyze a media link found on the clipboard when the app is opened. */
     val clipboardDetection: Boolean = true,
     val speedLimit: SpeedLimit = SpeedLimit.UNLIMITED,
+    /**
+     * Library: also index music and videos from outside ENAGELYUCA's folders (needs the media
+     * read permission). Off by default: the Library starts with what the app downloaded.
+     */
+    val includeDeviceMedia: Boolean = false,
+    /** Library: extra folders the user added (SAF tree URIs with a persisted read grant). */
+    val libraryFolders: Set<String> = emptySet(),
 ) {
     companion object {
         const val MIN_CONCURRENT_DOWNLOADS = 1

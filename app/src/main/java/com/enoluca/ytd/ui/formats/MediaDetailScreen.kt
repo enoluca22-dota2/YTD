@@ -1,5 +1,6 @@
 package com.enoluca.ytd.ui.formats
 
+import com.enoluca.ytd.ui.library.LocalMediaOpener
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,7 +48,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.enoluca.ytd.core.FileActions
 import com.enoluca.ytd.core.FileNaming
 import com.enoluca.ytd.core.Formatting
 import com.enoluca.ytd.data.local.db.HistoryEntity
@@ -96,6 +96,7 @@ fun MediaDetailScreen(
     var duplicateConfirmed by rememberSaveable { mutableStateOf(false) }
     var pendingSubmit by remember { mutableStateOf<(() -> Unit)?>(null) }
     val context = LocalContext.current
+    val mediaOpener = LocalMediaOpener.current
     LaunchedEffect(media.webpageUrl) { existing = findExisting() }
 
     fun submit(format: MediaFormat, category: DownloadCategory, name: String, startNow: Boolean) {
@@ -214,8 +215,12 @@ fun MediaDetailScreen(
                     TextButton(onClick = {
                         pendingSubmit = null
                         val uri = previous?.fileUri
-                        if (uri == null || !FileActions.open(context, uri, previous.filename)) {
+                        if (uri == null) {
                             scope.launch { snackbar.showToast("No app can open this file.", ToastKind.Error) }
+                        } else {
+                            mediaOpener.open(uri, previous.filename) {
+                                scope.launch { snackbar.showToast("No app can open this file.", ToastKind.Error) }
+                            }
                         }
                     }) { Text("Open existing") }
                 }

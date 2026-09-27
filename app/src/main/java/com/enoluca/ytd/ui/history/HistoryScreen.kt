@@ -1,5 +1,6 @@
 package com.enoluca.ytd.ui.history
 
+import com.enoluca.ytd.ui.library.LocalMediaOpener
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -64,6 +65,7 @@ import kotlinx.coroutines.launch
 fun HistoryScreen(viewModel: HistoryViewModel, contentPadding: PaddingValues, onRedownload: (String) -> Unit) {
     val history by viewModel.history.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val mediaOpener = LocalMediaOpener.current
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var pendingDelete by remember { mutableStateOf<HistoryEntity?>(null) }
@@ -103,8 +105,10 @@ fun HistoryScreen(viewModel: HistoryViewModel, contentPadding: PaddingValues, on
                         entry = entry,
                         onOpen = {
                             val uri = entry.fileUri
-                            if (uri == null || !FileActions.open(context, uri, entry.filename)) {
+                            if (uri == null) {
                                 toast("No app on this device can open this file, or it was moved.")
+                            } else {
+                                mediaOpener.open(uri, entry.filename) { toast("No app on this device can open this file, or it was moved.") }
                             }
                         },
                         onShare = {

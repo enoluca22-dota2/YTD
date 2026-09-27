@@ -1,5 +1,6 @@
 package com.enoluca.ytd.ui.home
 
+import com.enoluca.ytd.ui.library.LocalMediaOpener
 import android.content.ClipData
 import android.content.ClipDescription
 import android.content.ClipboardManager
@@ -79,7 +80,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.enoluca.ytd.core.FileActions
 import com.enoluca.ytd.core.Formatting
 import com.enoluca.ytd.core.UrlValidator
 import com.enoluca.ytd.data.analyzer.ErrorAction
@@ -119,6 +119,7 @@ fun HomeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val mediaOpener = LocalMediaOpener.current
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     val toasts = remember { SnackbarHostState() }
@@ -251,8 +252,12 @@ fun HomeScreen(
             if (recent.isNotEmpty()) {
                 RecentDownloadsSection(recent) { entry ->
                     val uri = entry.fileUri
-                    if (uri == null || !FileActions.open(context, uri, entry.filename)) {
+                    if (uri == null) {
                         scope.launch { toasts.showToast("No app can open this file, or it was moved.", ToastKind.Error) }
+                    } else {
+                        mediaOpener.open(uri, entry.filename) {
+                            scope.launch { toasts.showToast("No app can open this file, or it was moved.", ToastKind.Error) }
+                        }
                     }
                 }
             }

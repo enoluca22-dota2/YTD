@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Live radio: several public broadcasters (e.g. RTSH Radio Tirana, Radio 24, Absolute Radio) only
+  stream over plain HTTP, and the station directory lists many more. Cleartext is therefore allowed
+  for the media player. Everything the app itself fetches (GitHub updates, the station directory,
+  YouTube/TikTok) uses HTTPS, and in-app updates additionally verify checksum and signature.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

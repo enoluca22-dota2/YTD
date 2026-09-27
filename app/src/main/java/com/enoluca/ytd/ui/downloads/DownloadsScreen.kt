@@ -1,5 +1,6 @@
 package com.enoluca.ytd.ui.downloads
 
+import com.enoluca.ytd.ui.library.LocalMediaOpener
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -88,6 +89,7 @@ fun DownloadsScreen(
     val downloads by viewModel.downloads.collectAsStateWithLifecycle()
     val waitingForWifi by viewModel.waitingForWifi.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val mediaOpener = LocalMediaOpener.current
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     fun toast(message: String) = scope.launch { snackbar.showToast(message, ToastKind.Error) }
@@ -184,8 +186,12 @@ fun DownloadsScreen(
                             onDelete = { viewModel.deleteRecord(entity.id) },
                             onOpen = {
                                 val uri = entity.fileUri
-                                if (uri == null || !FileActions.open(context, uri, "${entity.fileBaseName}.${entity.container}")) {
+                                if (uri == null) {
                                     toast("No app on this device can open this file, or it was moved.")
+                                } else {
+                                    mediaOpener.open(uri, "${entity.fileBaseName}.${entity.container}") {
+                                        toast("No app on this device can open this file, or it was moved.")
+                                    }
                                 }
                             },
                             onShare = {

@@ -77,8 +77,11 @@ class DownloadRepository(
         return downloadDao.insert(entity)
     }
 
-    /** Groups items queued together from one playlist ("Downloading playlist 4 / 18"). */
-    data class Batch(val id: String, val title: String?, val index: Int, val size: Int)
+    /**
+     * Groups items queued together from one playlist ("Downloading playlist 4 / 18").
+     * [sourceIndex] is the item's 1-based position in the source playlist.
+     */
+    data class Batch(val id: String, val title: String?, val index: Int, val size: Int, val sourceIndex: Int? = null)
 
     /**
      * Queues the selected playlist items, one job each, in playlist order. One item failing
@@ -90,10 +93,10 @@ class DownloadRepository(
         playlistTitle: String?,
         entries: List<PlaylistEntry>,
         choice: QuickFormat,
+        batchId: String = newBatchId(playlistId),
     ): Int {
-        val batchId = "pl-${playlistId ?: "items"}-${System.currentTimeMillis()}"
         entries.forEachIndexed { i, entry ->
-            val batch = Batch(batchId, playlistTitle, index = i + 1, size = entries.size)
+            val batch = Batch(batchId, playlistTitle, index = i + 1, size = entries.size, sourceIndex = entry.index)
             if (entry.url != null) {
                 enqueueQuick(entry.url, entry.title, entry.thumbnailUrl, choice, uploader = entry.uploader, batch = batch)
             } else {
@@ -175,8 +178,14 @@ class DownloadRepository(
             batchTitle = batch?.title,
             batchIndex = batch?.index,
             batchSize = batch?.size,
+            playlistSourceIndex = batch?.sourceIndex,
         )
         return downloadDao.insert(entity)
+    }
+
+    companion object {
+        /** Batch id for one "download these playlist items" action (the Library links it to its playlist). */
+        fun newBatchId(playlistId: String?): String = "pl-${playlistId ?: "items"}-${System.currentTimeMillis()}"
     }
 
     suspend fun pause(id: Long) = downloadEngine.pause(id)

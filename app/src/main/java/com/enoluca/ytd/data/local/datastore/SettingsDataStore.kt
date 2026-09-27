@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -27,6 +28,8 @@ class SettingsDataStore(private val context: Context) {
         val DEBUG_LOGGING = booleanPreferencesKey("debug_logging")
         val CLIPBOARD_DETECTION = booleanPreferencesKey("clipboard_detection")
         val SPEED_LIMIT = stringPreferencesKey("speed_limit")
+        val INCLUDE_DEVICE_MEDIA = booleanPreferencesKey("library_include_device_media")
+        val LIBRARY_FOLDERS = stringSetPreferencesKey("library_folders")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { prefs ->
@@ -48,6 +51,8 @@ class SettingsDataStore(private val context: Context) {
             clipboardDetection = prefs[Keys.CLIPBOARD_DETECTION] ?: true,
             speedLimit = prefs[Keys.SPEED_LIMIT]?.let { runCatching { SpeedLimit.valueOf(it) }.getOrNull() }
                 ?: SpeedLimit.UNLIMITED,
+            includeDeviceMedia = prefs[Keys.INCLUDE_DEVICE_MEDIA] ?: false,
+            libraryFolders = prefs[Keys.LIBRARY_FOLDERS] ?: emptySet(),
         )
     }
 
@@ -102,6 +107,18 @@ class SettingsDataStore(private val context: Context) {
 
     suspend fun setSpeedLimit(limit: SpeedLimit) {
         context.dataStore.edit { it[Keys.SPEED_LIMIT] = limit.name }
+    }
+
+    suspend fun setIncludeDeviceMedia(value: Boolean) {
+        context.dataStore.edit { it[Keys.INCLUDE_DEVICE_MEDIA] = value }
+    }
+
+    suspend fun addLibraryFolder(treeUri: String) {
+        context.dataStore.edit { it[Keys.LIBRARY_FOLDERS] = (it[Keys.LIBRARY_FOLDERS] ?: emptySet()) + treeUri }
+    }
+
+    suspend fun removeLibraryFolder(treeUri: String) {
+        context.dataStore.edit { it[Keys.LIBRARY_FOLDERS] = (it[Keys.LIBRARY_FOLDERS] ?: emptySet()) - treeUri }
     }
 
     suspend fun clearAll() {

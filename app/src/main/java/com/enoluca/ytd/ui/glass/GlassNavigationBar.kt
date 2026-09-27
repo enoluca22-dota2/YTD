@@ -27,6 +27,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import com.enoluca.ytd.ui.theme.GalacticMidnight
 import com.enoluca.ytd.ui.theme.LocalResolvedTheme
 import com.enoluca.ytd.ui.theme.VisualStyle
@@ -108,6 +112,8 @@ fun GlassNavigationBar(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // Six tabs make each cell tall and narrow; a capsule would then clip the label's corners.
+        val cellShape = if (items.size > 5) RoundedCornerShape(18.dp) else Capsule()
         items.forEach { item ->
             val galactic = theme.style == VisualStyle.GALACTIC
             val indicator by animateColorAsState(
@@ -131,9 +137,9 @@ fun GlassNavigationBar(
                 Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clip(Capsule())
+                    .clip(cellShape)
                     .background(indicator)
-                    .border(1.dp, indicatorBorder, Capsule())
+                    .border(1.dp, indicatorBorder, cellShape)
                     .selectable(
                         selected = item.selected,
                         onClick = item.onClick,
@@ -145,12 +151,13 @@ fun GlassNavigationBar(
                 verticalArrangement = Arrangement.Center,
             ) {
                 Icon(item.icon, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
-                Text(
+                // Six tabs on a narrow phone: labels shrink a little rather than get cut off.
+                val labelStyle = MaterialTheme.typography.labelSmall
+                BasicText(
                     item.label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = color,
-                    fontWeight = if (item.selected) FontWeight.SemiBold else FontWeight.Medium,
+                    style = labelStyle.copy(color = color, fontWeight = if (item.selected) FontWeight.SemiBold else FontWeight.Medium),
                     maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = labelStyle.fontSize, stepSize = 0.5.sp),
                 )
             }
         }

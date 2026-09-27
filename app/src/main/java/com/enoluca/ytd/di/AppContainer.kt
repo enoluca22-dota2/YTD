@@ -18,6 +18,14 @@ import com.enoluca.ytd.data.repository.HistoryRepository
 import com.enoluca.ytd.download.DownloadEngine
 import com.enoluca.ytd.download.DownloadNotifications
 import com.enoluca.ytd.download.DownloadService
+import com.enoluca.ytd.library.ArtworkCache
+import com.enoluca.ytd.library.LibraryIndexer
+import com.enoluca.ytd.library.LibraryRepository
+import com.enoluca.ytd.playback.PlaybackSnapshotStore
+import com.enoluca.ytd.playback.PlayerConnection
+import com.enoluca.ytd.radio.AssetRadioCatalog
+import com.enoluca.ytd.radio.RadioBrowserDirectory
+import com.enoluca.ytd.radio.RadioRepository
 import com.enoluca.ytd.update.UpdateManager
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -84,7 +92,32 @@ class AppContainer(private val appContext: Context) {
             networkMonitor = networkMonitor,
             scope = applicationScope,
             requestForeground = { DownloadService.start(appContext) },
+            // Downloader → file → Library: every published file is indexed right away.
+            completionListener = libraryIndexer,
         ).also { it.start() }
+    }
+
+    // --- Library & playback (Downloader → Media file → Library → Player) ----------------------
+
+    private val artworkCache: ArtworkCache by lazy { ArtworkCache(appContext) }
+    val libraryRepository: LibraryRepository by lazy { LibraryRepository(appContext, database, artworkCache) }
+    val libraryIndexer: LibraryIndexer by lazy {
+        LibraryIndexer(appContext, database, libraryRepository, artworkCache, settingsDataStore, applicationScope)
+    }
+
+    /** Saved Now Playing queue (restored when the playback service starts). */
+    val playbackSnapshots: PlaybackSnapshotStore by lazy { PlaybackSnapshotStore(database.playbackSnapshotDao()) }
+
+    // --- Radio (live streams; never part of the Library or Downloads) -------------------------
+
+    /** Bundled catalog + Radio Browser directory; swap [RadioBrowserDirectory] to change the directory service. */
+    val radioRepository: RadioRepository by lazy {
+        RadioRepository(AssetRadioCatalog(appContext), RadioBrowserDirectory(), database.radioDao())
+    }
+
+    /** The UI's connection to the playback service; commands run on the main thread (Media3 requirement). */
+    val playerConnection: PlayerConnection by lazy {
+        PlayerConnection(appContext, CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate))
     }
 
     /** GitHub Releases updater (Settings → Check for Updates). */

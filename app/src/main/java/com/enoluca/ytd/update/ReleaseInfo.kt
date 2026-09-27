@@ -30,10 +30,10 @@ object ReleaseParser {
      * (in the device's preference order) and falls back to the universal APK.
      */
     fun parse(root: JsonNode, deviceAbis: List<String>): Result {
-        if (root.path("draft").asBoolean(false)) return Result.Unusable("draft")
-        if (root.path("prerelease").asBoolean(false)) return Result.Unusable("pre-release")
-        val tag = root.text("tag_name") ?: return Result.Unusable("no tag")
-        val version = AppVersion.parse(tag) ?: return Result.Unusable("tag '$tag' is not a version")
+        if (root.path("draft").asBoolean(false)) return Result.Unusable("it is a draft")
+        if (root.path("prerelease").asBoolean(false)) return Result.Unusable("it is a pre-release")
+        val tag = root.text("tag_name") ?: return Result.Unusable("it has no tag")
+        val version = AppVersion.parse(tag) ?: return Result.Unusable("its tag '$tag' is not a version like v1.2.3")
 
         val assets = root.path("assets").mapNotNull { a ->
             val name = a.text("name") ?: return@mapNotNull null
@@ -41,7 +41,9 @@ object ReleaseParser {
             if (!url.startsWith("https://")) return@mapNotNull null
             ReleaseAsset(name, url, a.path("size").takeIf { it.isNumber }?.asLong(), a.text("content_type"))
         }
-        val apks = assets.mapNotNull { asset ->
+        // Current-brand names first, so the choice never depends on GitHub's asset order (the
+        // legacy YTD-* copies are byte-identical, kept for pre-rename installs).
+        val apks = assets.sortedBy { !it.name.startsWith("${UpdateConfig.APP_NAME}-") }.mapNotNull { asset ->
             val m = UpdateConfig.ASSET_PATTERN.matchEntire(asset.name) ?: return@mapNotNull null
             // The APK must belong to this release, not a stale file with another version.
             if (AppVersion.parse(m.groupValues[1])?.compareTo(version) != 0) return@mapNotNull null
@@ -49,7 +51,10 @@ object ReleaseParser {
         }
         val apk = deviceAbis.firstNotNullOfOrNull { abi -> apks.firstOrNull { it.first == abi }?.second }
             ?: apks.firstOrNull { it.first == null }?.second
-            ?: return Result.Unusable("no APK asset for this device")
+            ?: return Result.Unusable(
+                "it has no APK asset for this device (expected ${UpdateConfig.APP_NAME}-v$version.apk" +
+                    (deviceAbis.firstOrNull()?.let { " or ${UpdateConfig.APP_NAME}-v$version-$it.apk" } ?: "") + ")"
+            )
 
         return Result.Ok(
             ReleaseInfo(

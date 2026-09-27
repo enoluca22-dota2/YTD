@@ -46,7 +46,9 @@ object FileActions {
     fun delete(context: Context, uriString: String): Boolean {
         val uri = Uri.parse(uriString)
         return try {
-            if (DocumentsContract.isDocumentUri(context, uri)) {
+            if (uri.scheme == "file") {
+                uri.path?.let { java.io.File(it).delete() } == true
+            } else if (DocumentsContract.isDocumentUri(context, uri)) {
                 DocumentsContract.deleteDocument(context.contentResolver, uri)
             } else {
                 context.contentResolver.delete(uri, null, null) > 0

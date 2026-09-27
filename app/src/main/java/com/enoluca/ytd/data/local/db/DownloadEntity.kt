@@ -55,6 +55,8 @@ data class DownloadEntity(
     /** Number of items the user selected from that playlist. */
     val batchSize: Int? = null,
     val uploader: String? = null,
+    /** 1-based position of the item in its source playlist (keeps the Library playlist in that order). */
+    val playlistSourceIndex: Int? = null,
 ) {
     /** Rows created before queue ordering existed have position 0; they keep creation order. */
     val effectiveQueuePosition: Long get() = queuePosition.takeIf { it > 0 } ?: createdAt

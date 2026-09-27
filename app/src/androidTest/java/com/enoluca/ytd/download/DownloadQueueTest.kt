@@ -20,6 +20,11 @@ import com.enoluca.ytd.data.provider.MediaProvider
 import com.enoluca.ytd.data.provider.ProviderException
 import com.enoluca.ytd.data.provider.StoragePublisher
 import com.enoluca.ytd.data.repository.DownloadRepository
+import com.enoluca.ytd.library.ArtworkCache
+import com.enoluca.ytd.library.LibraryIndexer
+import com.enoluca.ytd.library.LibraryRepository
+import com.enoluca.ytd.library.SourcePlaylistKey
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -56,6 +61,7 @@ class DownloadQueueTest {
     private lateinit var scope: CoroutineScope
     private lateinit var engine: DownloadEngine
     private lateinit var repository: DownloadRepository
+    private lateinit var library: LibraryRepository
     private val provider = ScriptedProvider()
 
     @Before
@@ -63,6 +69,9 @@ class DownloadQueueTest {
         context = ApplicationProvider.getApplicationContext()
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val artwork = ArtworkCache(context)
+        library = LibraryRepository(context, db, artwork)
+        val indexer = LibraryIndexer(context, db, library, artwork, SettingsDataStore(context), scope)
         engine = DownloadEngine(
             context = context,
             downloadDao = db.downloadDao(),
@@ -74,6 +83,8 @@ class DownloadQueueTest {
             networkMonitor = NetworkMonitor(context),
             scope = scope,
             requestForeground = {},
+            // As in the app: every published file goes to the Library.
+            completionListener = indexer,
         )
         repository = DownloadRepository(db.downloadDao(), engine)
         engine.start()
@@ -193,6 +204,49 @@ class DownloadQueueTest {
         provider.slowFinishes = true
         engine.resume(id)
         awaitStatus(id, DownloadStatus.COMPLETED)
+    }
+
+    // --- Download → Library ------------------------------------------------------------------
+
+    @Test
+    fun aCompletedDownloadIsImmediatelyInTheLibraryAndAFailedOneNever() = runBlocking<Unit> {
+        val ok = enqueue("ok://lib-ok", "Library video")
+        val bad = enqueue("fail://lib-fail", "Broken video")
+        val done = awaitStatus(ok, DownloadStatus.COMPLETED)
+        awaitStatus(bad, DownloadStatus.FAILED)
+
+        val item = library.findByUri(done.fileUri!!)
+        assertNotNull("indexed when the download completed", item)
+        assertEquals("Library video", item!!.title)
+        assertEquals(ok, item.downloadId)
+        assertEquals(com.enoluca.ytd.data.local.db.MediaType.VIDEO, item.mediaType)
+        assertTrue(item.isAvailable)
+        val all = library.observeAllMedia().first()
+        assertFalse("failed downloads aren't playable media", all.any { it.title == "Broken video" })
+    }
+
+    @Test
+    fun aPlaylistDownloadFillsItsLibraryPlaylistInOrderAndARetryJoinsLater() = runBlocking<Unit> {
+        val batchId = DownloadRepository.newBatchId("PLlib")
+        val playlistId = library.linkBatchToSourcePlaylist(
+            batchId, SourcePlaylistKey.of("youtube", "PLlib", "u"), "Road Mix", null, "https://www.youtube.com/playlist?list=PLlib", "YouTube",
+        )
+        val entries = listOf(
+            PlaylistEntry("First", "ok://mix-1", 1, 60, null),
+            PlaylistEntry("Second", "flaky://mix-2", 2, 60, null),
+            PlaylistEntry("Third", "ok://mix-3", 3, 60, null),
+        )
+        repository.enqueuePlaylist("https://www.youtube.com/playlist?list=PLlib", "PLlib", "Road Mix", entries, QuickFormat.BestVideo(), batchId)
+        val rows = db.downloadDao().getBatch(batchId).associateBy { it.sourceUrl }
+        awaitStatus(rows.getValue("ok://mix-1").id, DownloadStatus.COMPLETED)
+        awaitStatus(rows.getValue("ok://mix-3").id, DownloadStatus.COMPLETED)
+        val failed = awaitStatus(rows.getValue("flaky://mix-2").id, DownloadStatus.FAILED)
+        assertEquals(listOf("First", "Third"), library.getPlaylistTracks(playlistId).map { it.media.title })
+
+        engine.retry(failed.id)
+        awaitStatus(failed.id, DownloadStatus.COMPLETED)
+        withTimeout(5_000) { while (library.getPlaylistTracks(playlistId).size < 3) delay(50) }
+        assertEquals(listOf("First", "Second", "Third"), library.getPlaylistTracks(playlistId).map { it.media.title })
     }
 
     // --- Progress pipeline: yt-dlp output -> ProgressTracker -> engine -> Room (what the UI observes)

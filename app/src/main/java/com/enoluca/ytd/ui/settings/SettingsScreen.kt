@@ -41,6 +41,9 @@ import com.enoluca.ytd.data.local.datastore.NetworkPolicy
 import com.enoluca.ytd.data.local.datastore.SpeedLimit
 import com.enoluca.ytd.ui.components.ScreenHeader
 import com.enoluca.ytd.ui.glass.GlassSurface
+import com.enoluca.ytd.core.Formatting
+import com.enoluca.ytd.library.LibraryIndexer
+import androidx.compose.material3.TextButton
 
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel, contentPadding: PaddingValues) {
@@ -110,6 +113,8 @@ fun SettingsScreen(viewModel: SettingsViewModel, contentPadding: PaddingValues) 
             }
         }
 
+        item { LibrarySettings(viewModel, settings) }
+
         item {
             SettingsSection("Appearance") {
                 ThemePicker(
@@ -176,6 +181,97 @@ fun SettingsScreen(viewModel: SettingsViewModel, contentPadding: PaddingValues) 
                     AppUpdateRow(viewModel.updateManager)
                 }
             }
+        }
+    }
+}
+
+/** Library & playback: storage, rescan, missing files, device media, Library folders. */
+@Composable
+private fun LibrarySettings(viewModel: SettingsViewModel, settings: AppSettings) {
+    val context = LocalContext.current
+    val stats by viewModel.libraryStats.collectAsStateWithLifecycle()
+    val downloaded by viewModel.downloadedStats.collectAsStateWithLifecycle()
+    val scan by viewModel.scanState.collectAsStateWithLifecycle()
+    val removed by viewModel.missingRemoved.collectAsStateWithLifecycle()
+    val storage by produceState<Pair<Long, Long>?>(null, stats) { value = viewModel.deviceStorage() }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
+        if (results.values.any { it }) viewModel.setIncludeDeviceMedia(true)
+    }
+    val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
+        if (uri != null) {
+            val persisted = runCatching {
+                context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }.isSuccess
+            if (persisted) viewModel.addLibraryFolder(uri.toString())
+        }
+    }
+
+    SettingsSection("Library & playback") {
+        Text("Storage", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 4.dp))
+        Text(
+            "ENAGELYUCA media: ${Formatting.bytes(downloaded.totalBytes).takeIf { downloaded.count > 0 } ?: "0 B"} (${downloaded.count} files)",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Text(
+            "Library: ${stats.count} items · ${if (stats.count > 0) Formatting.bytes(stats.totalBytes) else "0 B"}",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        storage?.let { (free, total) ->
+            Text(
+                "Free device storage: ${Formatting.bytes(free)} of ${Formatting.bytes(total)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedButton(onClick = viewModel::rescanLibrary, enabled = !scan.running) { Text(if (scan.running) "Scanning…" else "Rescan library") }
+            OutlinedButton(onClick = viewModel::removeMissingFromLibrary) { Text("Remove missing") }
+        }
+        val status = when {
+            scan.running -> "Looking for new, changed and missing files…"
+            removed != null -> if (removed == 0) "No missing files." else "Removed $removed missing item(s)."
+            else -> scan.lastResult?.let { r ->
+                listOfNotNull(
+                    "${r.total} items",
+                    r.added.takeIf { it > 0 }?.let { "$it new" },
+                    r.missing.takeIf { it > 0 }?.let { "$it missing" },
+                    r.restored.takeIf { it > 0 }?.let { "$it found again" },
+                ).joinToString(" · ")
+            }
+        }
+        status?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp)) }
+
+        SwitchRow("Include other music & videos on this device", settings.includeDeviceMedia) { enabled ->
+            when {
+                !enabled -> viewModel.setIncludeDeviceMedia(false)
+                LibraryIndexer.hasDeviceMediaPermission(context) -> viewModel.setIncludeDeviceMedia(true)
+                else -> permissionLauncher.launch(LibraryIndexer.deviceMediaPermissions)
+            }
+        }
+        Text(
+            "Off: the Library shows what ENAGELYUCA downloaded. On: also your other songs and videos (asks for media access).",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Column(Modifier.padding(vertical = 10.dp)) {
+            Text("Library folders", style = MaterialTheme.typography.bodyLarge)
+            if (settings.libraryFolders.isEmpty()) {
+                Text("Add a folder to include its music and videos.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            settings.libraryFolders.forEach { tree ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        runCatching { androidx.documentfile.provider.DocumentFile.fromTreeUri(context, Uri.parse(tree))?.name }.getOrNull() ?: "Folder",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = { viewModel.removeLibraryFolder(tree) }) { Text("Remove") }
+                }
+            }
+            OutlinedButton(onClick = { folderPicker.launch(null) }, modifier = Modifier.padding(top = 6.dp)) { Text("Add folder") }
         }
     }
 }

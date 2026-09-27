@@ -2,4 +2,5 @@
 <full-backup-content>
     <exclude domain="database" path="ytd_database" />
     <exclude domain="file" path="downloads_tmp" />
+    <exclude domain="file" path="artwork" />
 </full-backup-content>

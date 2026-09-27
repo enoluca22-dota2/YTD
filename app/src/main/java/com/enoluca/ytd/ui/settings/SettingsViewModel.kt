@@ -11,6 +11,11 @@ import com.enoluca.ytd.data.local.datastore.SpeedLimit
 import com.enoluca.ytd.data.provider.YtDlpUpdater
 import com.enoluca.ytd.data.repository.HistoryRepository
 import com.enoluca.ytd.download.AudioConverter
+import com.enoluca.ytd.data.local.db.LibraryStats
+import com.enoluca.ytd.library.LibraryIndexer
+import com.enoluca.ytd.library.LibraryRepository
+import android.os.Environment
+import android.os.StatFs
 import com.enoluca.ytd.update.UpdateManager
 import com.yausername.youtubedl_android.YoutubeDL
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +36,8 @@ class SettingsViewModel(
     private val historyRepository: HistoryRepository,
     private val ytDlpUpdater: YtDlpUpdater,
     val updateManager: UpdateManager,
+    private val libraryRepository: LibraryRepository,
+    private val libraryIndexer: LibraryIndexer,
 ) : ViewModel() {
 
     val settings: StateFlow<AppSettings> = settingsDataStore.settings
@@ -52,6 +59,48 @@ class SettingsViewModel(
     fun setDebugLoggingEnabled(value: Boolean) = viewModelScope.launch { settingsDataStore.setDebugLoggingEnabled(value) }
 
     fun clearHistory() = viewModelScope.launch { historyRepository.clearAll() }
+
+    // --- Library & storage --------------------------------------------------------------------
+
+    val libraryStats: StateFlow<LibraryStats> = libraryRepository.observeStats()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LibraryStats(0, 0))
+    val downloadedStats: StateFlow<LibraryStats> = libraryRepository.observeDownloadedStats()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LibraryStats(0, 0))
+    val scanState: StateFlow<LibraryIndexer.ScanState> = libraryIndexer.state
+
+    /** Free / total bytes of shared storage (where downloads are saved). */
+    suspend fun deviceStorage(): Pair<Long, Long>? = withContext(Dispatchers.IO) {
+        runCatching {
+            val stat = StatFs(Environment.getExternalStorageDirectory().path)
+            stat.availableBytes to stat.totalBytes
+        }.getOrNull()
+    }
+
+    fun rescanLibrary() {
+        libraryIndexer.requestRescan()
+    }
+
+    private val _missingRemoved = MutableStateFlow<Int?>(null)
+    val missingRemoved: StateFlow<Int?> = _missingRemoved.asStateFlow()
+    fun removeMissingFromLibrary() = viewModelScope.launch { _missingRemoved.value = libraryRepository.forgetMissing() }
+
+    fun setIncludeDeviceMedia(value: Boolean) = viewModelScope.launch {
+        settingsDataStore.setIncludeDeviceMedia(value)
+        libraryIndexer.requestRescan()
+    }
+
+    fun addLibraryFolder(treeUri: String) = viewModelScope.launch {
+        settingsDataStore.addLibraryFolder(treeUri)
+        libraryIndexer.requestRescan()
+    }
+
+    fun removeLibraryFolder(treeUri: String) = viewModelScope.launch {
+        settingsDataStore.removeLibraryFolder(treeUri)
+        runCatching {
+            appContext.contentResolver.releasePersistableUriPermission(android.net.Uri.parse(treeUri), android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        libraryIndexer.requestRescan()
+    }
 
     fun clearTempFiles() = viewModelScope.launch {
         withContext(Dispatchers.IO) {

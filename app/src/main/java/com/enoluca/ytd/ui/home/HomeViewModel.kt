@@ -15,10 +15,14 @@ import com.enoluca.ytd.data.model.PlaylistEntry
 import com.enoluca.ytd.data.model.PlaylistInfo
 import com.enoluca.ytd.data.model.QuickFormat
 import com.enoluca.ytd.data.platform.DetectedPlatform
+import com.enoluca.ytd.data.platform.Platforms
 import com.enoluca.ytd.data.platform.PlaylistContext
+import com.enoluca.ytd.data.platform.YouTubeProvider
 import com.enoluca.ytd.data.provider.ProviderException
 import com.enoluca.ytd.data.repository.DownloadRepository
 import com.enoluca.ytd.data.repository.HistoryRepository
+import com.enoluca.ytd.library.LibraryRepository
+import com.enoluca.ytd.library.SourcePlaylistKey
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -88,6 +92,7 @@ class HomeViewModel(
     private val analyzer: MediaAnalyzer,
     private val downloadRepository: DownloadRepository,
     private val historyRepository: HistoryRepository,
+    private val libraryRepository: LibraryRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeUiState())
@@ -257,9 +262,28 @@ class HomeViewModel(
         return queued
     }
 
-    /** Playlist: queue the selected entries through the normal download queue, one job per item. */
-    suspend fun enqueueEntries(playlist: PlaylistInfo, entries: List<PlaylistEntry>, choice: QuickFormat): Int =
-        downloadRepository.enqueuePlaylist(playlist.sourceUrl, playlist.id, playlist.title, entries, choice)
+    /**
+     * Playlist: queue the selected entries through the normal download queue, one job per item.
+     * A real YouTube playlist also becomes a Library playlist first; each item joins it (in the
+     * playlist's order) when its download completes — failed items never do, retried ones later.
+     */
+    suspend fun enqueueEntries(playlist: PlaylistInfo, entries: List<PlaylistEntry>, choice: QuickFormat): Int {
+        val batchId = DownloadRepository.newBatchId(playlist.id)
+        // Only real YouTube playlists; TikTok items never get a playlist of their own.
+        if (Platforms.detect(playlist.sourceUrl).spec == YouTubeProvider && playlist.id != null) {
+            runCatching {
+                libraryRepository.linkBatchToSourcePlaylist(
+                    batchId = batchId,
+                    sourceKey = SourcePlaylistKey.of(YouTubeProvider.id, playlist.id, playlist.sourceUrl),
+                    title = playlist.title,
+                    thumbnailUrl = playlist.thumbnailUrl,
+                    sourceUrl = playlist.sourceUrl,
+                    sourcePlatform = YouTubeProvider.displayName,
+                )
+            }
+        }
+        return downloadRepository.enqueuePlaylist(playlist.sourceUrl, playlist.id, playlist.title, entries, choice, batchId)
+    }
 
     fun cancelAnalyze() {
         analyzeJob?.cancel()

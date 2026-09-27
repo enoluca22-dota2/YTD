@@ -20,6 +20,8 @@ class YtdApplication : Application() {
         container.downloadNotifications.ensureChannels()
         // Downloaded update APKs are useless once installed (or abandoned).
         container.updateManager.cleanUpOldDownloads()
+        // Library: background scan shortly after start-up, then follows MediaStore changes.
+        container.libraryIndexer.start()
 
         // Unpacks the bundled yt-dlp/python/ffmpeg binaries on first run; cheap no-op afterwards.
         // Must not block the main thread. Detection and downloads wait on engineReady.

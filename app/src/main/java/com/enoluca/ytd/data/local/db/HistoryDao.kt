@@ -21,6 +21,10 @@ interface HistoryDao {
     @Query("SELECT * FROM history WHERE status = 'COMPLETED' ORDER BY completedAt DESC LIMIT :limit")
     fun observeRecent(limit: Int): Flow<List<HistoryEntity>>
 
+    /** Completed downloads that produced a file, oldest first (the Library imports them). */
+    @Query("SELECT * FROM history WHERE status = 'COMPLETED' AND fileUri IS NOT NULL ORDER BY completedAt ASC")
+    suspend fun getCompletedWithFile(): List<HistoryEntity>
+
     @Query("DELETE FROM history")
     suspend fun clearAll()
 
